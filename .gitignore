@@ -1,3 +1,15 @@
+# Vscode
+.vscode
+
+# ESP components
+managed_components
+
+# Build folder
+build
+
+# Certs
+certs/
+
 # Prerequisites
 *.d
 
