@@ -11,6 +11,7 @@ build
 
 # Certs
 certs/
+secrets.h
 
 # Prerequisites
 *.d

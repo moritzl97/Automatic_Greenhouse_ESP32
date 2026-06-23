@@ -3,6 +3,7 @@
 #include <cJSON.h>
 #include "esp_log.h"
 #include <stdlib.h>
+#include "secrets.h"
 
 #define MAX_JSON_SIZE 512
 #define TAG "CONFIG_HANDLER"
@@ -14,8 +15,6 @@
 #define DEFAULT_FAN_HUM_LOWER_THRESHOLD 65.0f
 #define DEFAULT_PUMP_SOILMOIST_THRESHOLD 25.0f
 #define DEFAULT_GROWLIGHT_LIGHT_THRESHOLD 70.0f
-#define DEFAULT_WIFI_SSID "Lackner@mobile"
-#define DEFAULT_WIFI_PASS "yvka1961"
 
 greenhouse_config_t greenhouse_config;
 
