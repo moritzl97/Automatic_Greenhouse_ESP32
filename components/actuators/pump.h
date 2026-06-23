@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
-#include "outputs.h"
-#include "parameter_config.h"
+#include "status_leds.h"
+#include "utils.h"
 
 // Public API
 void pump_init(void);

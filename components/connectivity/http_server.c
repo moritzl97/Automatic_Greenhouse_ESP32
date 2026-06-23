@@ -1,4 +1,4 @@
-#include "server.h"
+#include "http_server.h"
 #include "esp_http_server.h"
 #include "cJSON.h"
 #include "esp_log.h"
@@ -14,7 +14,7 @@ esp_err_t data_get_handler(httpd_req_t *req) {
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "temperature_C", ctx->measurements->temperature);
     cJSON_AddNumberToObject(root, "relative_humidity_pct", ctx->measurements->relative_humidity);
-    cJSON_AddNumberToObject(root, "soil_moisture_pct", ctx->measurements->soil_moisture);
+    //cJSON_AddNumberToObject(root, "soil_moisture_pct", ctx->measurements->soil_moisture);
     cJSON_AddNumberToObject(root, "light_intensity_pct", ctx->measurements->light);
     
     char *json_str = cJSON_Print(root);

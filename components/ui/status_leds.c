@@ -1,5 +1,5 @@
-#include "outputs.h"
-#include "config.h"
+#include "status_leds.h"
+#include "gpio_config.h"
 #include "esp_timer.h"
 
 void outputs_init(void)

@@ -5,7 +5,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "driver/gpio.h" 
-#include "config.h"
+#include "gpio_config.h"
 #include "i2c_init.h"
 
 #define TAG "AHT20"

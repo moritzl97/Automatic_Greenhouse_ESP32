@@ -14,7 +14,7 @@
 #include <sys/param.h>
 #include "display.h"
 #include "utils.h"
-#include "config.h"
+#include "gpio_config.h"
 #include "i2c_init.h"
 
 #define TAG "DISPLAY"
@@ -321,7 +321,7 @@ void display_draw(measurements_t *measurements, bool button_press) {
             break;
         case 3: //soil moisture
             lv_label_set_text_fmt(measurment_description_label, "Soil Moisture");
-            lv_label_set_text_fmt(measurment_value_label, "%d.%d%%", (int)measurements->soil_moisture, (int)((measurements->soil_moisture - (int)measurements->soil_moisture) * 10));
+            //lv_label_set_text_fmt(measurment_value_label, "%d.%d%%", (int)measurements->soil_moisture, (int)((measurements->soil_moisture - (int)measurements->soil_moisture) * 10));
             break;
         default:
             break;

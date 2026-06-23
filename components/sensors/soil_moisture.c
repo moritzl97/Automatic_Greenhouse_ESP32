@@ -4,8 +4,8 @@
 #include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
-#include "config.h"
 #include "adc_init.h"
+#include "gpio_config.h"
 
 #define TAG "SOIL_MOISTURE_SENSOR"
 

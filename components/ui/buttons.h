@@ -1,5 +1,5 @@
-#ifndef INPUTS_H
-#define INPUTS_H
+#ifndef BUTTONS_H
+#define BUTTONS_H
 
 #include <stdbool.h>
 #include "driver/gpio.h"

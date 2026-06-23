@@ -4,9 +4,9 @@
 #include "freertos/task.h"
 #include "grow_light.h"
 #include "esp_log.h"
-#include "config.h"
 #include "esp_log.h"
-#include "parameter_config.h"
+#include "utils.h"
+#include "gpio_config.h"
 
 #define TAG "GROW_LIGHT"
 

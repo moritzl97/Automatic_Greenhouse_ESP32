@@ -1,9 +1,10 @@
-#include "inputs.h"
+#include "buttons.h"
 #include "esp_timer.h"
-#include "config.h"
+#include "gpio_config.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/uart.h"
+#include "utils.h"
 #include "parameter_config.h"
 
 // Button configuration

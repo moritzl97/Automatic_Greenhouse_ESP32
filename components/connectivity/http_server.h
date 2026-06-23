@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef HTTP_SERVER_H
+#define HTTP_SERVER_H
 
 #include "utils.h"
 #include "parameter_config.h"

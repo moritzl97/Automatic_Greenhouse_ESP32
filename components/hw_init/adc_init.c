@@ -1,6 +1,6 @@
 #include "adc_init.h"
 #include "esp_log.h"
-#include "config.h"
+#include "gpio_config.h"
 
 static adc_oneshot_unit_handle_t adc1_handle = NULL;
 
@@ -18,9 +18,9 @@ esp_err_t adc_init_all(void) {
     };
     
     // Soil moisture
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_4, &cfg));
-    // LDR
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, SOIL_ADC_CHANNEL, &cfg));
+    // LDR
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, LDR_ADC_CHANNEL, &cfg));
     
     return ESP_OK;
 }

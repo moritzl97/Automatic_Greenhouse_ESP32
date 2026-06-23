@@ -5,11 +5,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "driver/gpio.h"
-#include "config.h"
-#include "outputs.h"
+#include "buttons.h"
 #include "esp_timer.h"
 #include "driver/gptimer.h"
-#include "parameter_config.h"
+#include "utils.h"
+#include "gpio_config.h"
 
 #define TAG "PUMP_CONTROL"
 

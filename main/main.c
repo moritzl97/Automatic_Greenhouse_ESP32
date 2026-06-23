@@ -19,26 +19,24 @@
 
 #include <stdio.h>
 #include "esp_log.h"
-#include "fan.h"
 #include "pump.h"
 #include "grow_light.h"
 #include "utils.h"
 #include "display.h"
 #include "temp_hum_sensor.h"
 #include "light_sensor.h"
-#include "inputs.h"
+#include "buttons.h"
 #include "soil_moisture.h"
-#include "outputs.h"
-#include "config.h"
+#include "status_leds.h"
+#include "gpio_config.h"
 #include "wifi.h"
 #include "mqtt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
 #include "parameter_config.h"
-#include "server.h"
+#include "http_server.h"
 #include "esp_http_server.h"
-#include "analog_gauge.h"
 
 #define TAG "AUTOMATED_GREENHOUSE"
 #define DISPLAY_INTERVAL_MS 50
@@ -50,11 +48,12 @@ static uint32_t last_display_time = 0;
 
 void take_measurement(measurements_t *measurment)
 {
-    measurment->soil_moisture = soil_sensor_read();
     measurment->light = ldr_read_percent();
     aht20_read(&measurment->temperature, &measurment->relative_humidity);
+    for (int i = 0; i < 4; i++)
+        measurment->pots[i].soil_moisture = soil_sensor_read();
 
-    ESP_LOGI(TAG, "Measurement taken: temperature: %.2f C, relative humidity: %.2f %%, soil moisture: %.2f %%, light intensity: %.2f %%", measurment->temperature, measurment->relative_humidity, measurment->soil_moisture, measurment->light);
+    ESP_LOGI(TAG, "Measurement taken: temperature: %.2f C, relative humidity: %.2f %%, light intensity: %.2f %%", measurment->temperature, measurment->relative_humidity, measurment->light);
 }
 
 void app_main(void)
@@ -65,11 +64,9 @@ void app_main(void)
     ldr_init();
     soil_sensor_init();
     aht20_init();
-    // Initialize acctuators
-    fan_init();
+    // Initialize actuators
     pump_init();
     grow_light_init();
-    analog_gauge_init();
     // Initialize user Interface
     if (USE_DISPLAY) {
         greenhouse_display_init();
@@ -101,9 +98,14 @@ void app_main(void)
 
     measurements_t current_measurements = {
         .temperature = 0,
-        .soil_moisture = 0,
         .relative_humidity = 0,
         .light = 0,
+        .pots = {
+            {.id = 0, .name = "plant0", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
+            {.id = 1, .name = "plant1", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
+            {.id = 2, .name = "plant2", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
+            {.id = 3, .name = "plant3", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
+        }
     };
 
     // server init
@@ -117,6 +119,8 @@ void app_main(void)
     esp_log_level_set("esp-tls", ESP_LOG_NONE);
     esp_log_level_set("mqtt_client", ESP_LOG_NONE);
     esp_log_level_set("transport_base", ESP_LOG_NONE);
+
+
 
     while (1)
     {
@@ -144,7 +148,7 @@ void app_main(void)
                 set_red_connection_led(LED_OFF);
                 char buf[16];
 
-                // publish moisture percentage
+                // Temperature
                 snprintf(buf, sizeof(buf), "%.2f", current_measurements.temperature);
                 mqtt_publish("greenhouse/temperature", buf, 1, 0);
 
@@ -152,24 +156,26 @@ void app_main(void)
                 snprintf(buf, sizeof(buf), "%.2f", current_measurements.relative_humidity);
                 mqtt_publish("greenhouse/humidity", buf, 1, 0);
 
-                // Soil moisture
-                snprintf(buf, sizeof(buf), "%.2f", current_measurements.soil_moisture);
-                mqtt_publish("greenhouse/soil", buf, 1, 0);
-
                 // Light intensity
                 snprintf(buf, sizeof(buf), "%.2f", current_measurements.light);
                 mqtt_publish("greenhouse/light", buf, 1, 0);
                 ESP_LOGI(TAG, "Publishing data to cloud");
-                } else {
+
+                // Soil moisture
+                //for (int i = 0; i < 4; i++)
+                //    snprintf(buf, sizeof(buf), "%.2f", current_measurements.soil_moisture);
+                //    mqtt_publish("greenhouse/soil", buf, 1, 0);
+
+            } else {
                 ESP_LOGW(TAG, "MQTT not connected, skipping publish");
             }
             
             // actuators
-            fan_control(current_measurements.temperature, current_measurements.relative_humidity, greenhouse_config);
-            pump_control(current_measurements.soil_moisture, greenhouse_config);
             grow_light_control(current_measurements.light, greenhouse_config);
 
-            analog_gauge_control(current_measurements.light);
+            // pump control
+            for (int i = 0; i < 4; i++)
+                pump_control(current_measurements.pots[i].soil_moisture, greenhouse_config);
 
             last_measurement_time = now;
         }
@@ -184,11 +190,11 @@ void app_main(void)
             }
 
             // leds
-            if (current_measurements.soil_moisture <= greenhouse_config.pump_soilmoist_threshold_pct) {
-                set_green_moisture_led(LED_ON);
-            } else {
-                set_green_moisture_led(LED_OFF);
-            }
+            // if (current_measurements.soil_moisture <= greenhouse_config.pump_soilmoist_threshold_pct) {
+            //     set_green_moisture_led(LED_ON);
+            // } else {
+            //     set_green_moisture_led(LED_OFF);
+            // }
 
             //draw display
             if (USE_DISPLAY) {
@@ -197,6 +203,6 @@ void app_main(void)
             last_display_time = now;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

@@ -1,5 +1,5 @@
-#ifndef OUTPUTS_H
-#define OUTPUTS_H
+#ifndef STATUSLEDS_H
+#define STATUSLEDS_H
 
 #include <stdbool.h>
 #include "driver/gpio.h"

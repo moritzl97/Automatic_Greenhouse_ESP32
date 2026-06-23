@@ -1,7 +1,7 @@
 #include "i2c_init.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "config.h"
+#include "gpio_config.h"
 #include <driver/i2c_master.h>
 
 #define TAG "I2C"

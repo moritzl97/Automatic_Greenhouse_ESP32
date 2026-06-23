@@ -1,8 +1,24 @@
-#ifndef PARAMETER_CONFIG_H
-#define PARAMETER_CONFIG_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+
+typedef struct {
+    int id;
+    char name[20];
+    int gpio_pump;
+    int gpio_fan;
+    bool active;
+    float soil_moisture;
+} pot;
+
+typedef struct {
+    float temperature;
+    float relative_humidity;
+    float light;
+    pot pots[4];
+} measurements_t;
 
 typedef struct {
     uint32_t measurement_interval_s;
@@ -23,9 +39,5 @@ typedef struct {
     bool wifi_reconfigure;
     bool config_updated;
 } greenhouse_config_t;
-
-extern greenhouse_config_t greenhouse_config;
-void reset_to_default_config(void);
-void parse_json_to_config(const char *data, int len);
 
 #endif
