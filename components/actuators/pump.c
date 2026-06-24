@@ -20,14 +20,14 @@ static bool pump_state = false;
 
 void pump_init(void) {
     gpio_config_t io_conf_pump = {
-        .pin_bit_mask = (1ULL << PUMP_GPIO),
+        .pin_bit_mask = (1ULL << PUMP_1_PIN),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
     gpio_config(&io_conf_pump);
-    gpio_set_level(PUMP_GPIO, 1);
+    gpio_set_level(PUMP_1_PIN, 1);
         
     ESP_LOGI(TAG, "Pump configured");
 }
@@ -48,9 +48,9 @@ void pump_control(float moisture, greenhouse_config_t greenhouse_config) {
         if (moisture <= greenhouse_config.pump_soilmoist_threshold_pct && (now - last_watering) >= (WATERING_PAUSE_S * 1000 * 1000)) { 
             last_watering = esp_timer_get_time();
             pump_state = true;
-            gpio_set_level(PUMP_GPIO, !pump_state); //inverse due to relay
+            gpio_set_level(PUMP_1_PIN, !pump_state); //inverse due to relay
             vTaskDelay(pdMS_TO_TICKS(PUMP_DURATION_MS));
-            gpio_set_level(PUMP_GPIO, pump_state); //inverse due to relay
+            gpio_set_level(PUMP_1_PIN, pump_state); //inverse due to relay
             vTaskDelay(pdMS_TO_TICKS(100));
             ESP_LOGI(TAG, "PUMP ON (Moisture below threshold)");
         }

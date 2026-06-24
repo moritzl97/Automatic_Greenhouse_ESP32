@@ -17,7 +17,7 @@ void ldr_init(void)
     adc_init_all();
     // Configure calibration (maps raw ADC values to voltage)
     adc_cali_line_fitting_config_t cali_config = {
-        .unit_id = LDR_ADC_UNIT,
+        .unit_id = LIGHT_SENSOR_ADC_UNIT,
         .atten = ADC_ATTEN_DB_12,
         .bitwidth = ADC_BITWIDTH_12,
     };
@@ -32,7 +32,7 @@ void ldr_init(void)
 int ldr_read_raw(void)
 {
     int raw = 0;
-    if (adc_oneshot_read(get_adc1_handle(), LDR_ADC_CHANNEL, &raw) == ESP_OK)
+    if (adc_oneshot_read(get_adc1_handle(), LIGHT_SENSOR_ADC_CHANNEL, &raw) == ESP_OK)
     {
         return raw;
     }
@@ -43,7 +43,7 @@ int ldr_read_raw(void)
 float ldr_read_percent(void)
 {   
     int raw = 0;
-    if (adc_oneshot_read(get_adc1_handle(), LDR_ADC_CHANNEL, &raw) == ESP_OK)
+    if (adc_oneshot_read(get_adc1_handle(), LIGHT_SENSOR_ADC_CHANNEL, &raw) == ESP_OK)
     {
         return raw / 4095.0f * 100.0f;
     }

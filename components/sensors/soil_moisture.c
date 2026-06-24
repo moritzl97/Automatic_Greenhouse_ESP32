@@ -20,7 +20,7 @@ void soil_sensor_init(void)
 {
     adc_init_all();
     adc_cali_line_fitting_config_t cali_config = {
-        .unit_id = SOIL_ADC_UNIT,
+        .unit_id = SOIL_SENSOR_ADC_UNIT,
         .atten = ADC_ATTEN_DB_12,
         .bitwidth = ADC_BITWIDTH_12,
     };
@@ -34,7 +34,7 @@ int soil_sensor_read(void)
     int raw = 0;
     int voltage_mv = 0;
 
-    adc_oneshot_read(get_adc1_handle(), SOIL_ADC_CHANNEL, &raw);
+    adc_oneshot_read(get_adc1_handle(), SOIL_SENSOR_1_ADC_CHANNEL, &raw);
 
     adc_cali_raw_to_voltage(cali_handle, raw, &voltage_mv);
 

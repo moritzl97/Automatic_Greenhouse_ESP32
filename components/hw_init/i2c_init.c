@@ -18,8 +18,8 @@ esp_err_t i2c_bus_init(void) {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .glitch_ignore_cnt = 7,
         .i2c_port = I2C_BUS_PORT,
-        .sda_io_num = PIN_NUM_SDA,
-        .scl_io_num = PIN_NUM_SCL,
+        .sda_io_num = I2C_SDA_PIN,
+        .scl_io_num = I2C_SCL_PIN,
         .flags.enable_internal_pullup = true,
     };
     
