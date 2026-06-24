@@ -27,7 +27,6 @@
 #include "light_sensor.h"
 #include "buttons.h"
 #include "soil_moisture.h"
-#include "uart_connection.h"
 #include "status_leds.h"
 #include "gpio_config.h"
 #include "wifi.h"
@@ -42,6 +41,8 @@
 #define TAG "AUTOMATED_GREENHOUSE"
 #define DISPLAY_INTERVAL_MS 50
 
+#define USE_DISPLAY true
+
 static uint32_t last_measurement_time = 0;
 static uint32_t last_display_time = 0;
 
@@ -49,13 +50,10 @@ void take_measurement(measurements_t *measurment)
 {
     measurment->light = ldr_read_percent();
     aht20_read(&measurment->temperature, &measurment->relative_humidity);
-    measure_active_soil_moisture(measurment);
+    for (int i = 0; i < 4; i++)
+        measurment->pots[i].soil_moisture = soil_sensor_read();
 
     ESP_LOGI(TAG, "Measurement taken: temperature: %.2f C, relative humidity: %.2f %%, light intensity: %.2f %%", measurment->temperature, measurment->relative_humidity, measurment->light);
-    for (int i = 0; i < 4; i++) {
-        if (!measurment->pots[i].active) continue;
-        ESP_LOGI(TAG, "Measurement taken: soil moisture %d: %.2f %%", i, measurment->pots[i].soil_moisture);
-    }
 }
 
 void app_main(void)
@@ -70,31 +68,32 @@ void app_main(void)
     pump_init();
     grow_light_init();
     // Initialize user Interface
-    // greenhouse_display_init();
-
-    // buttons_init();
-    // status_leds_init();
+    if (USE_DISPLAY) {
+        greenhouse_display_init();
+    }
+    inputs_init();
+    outputs_init();
 
     // Initialize Non volatile storage (to store credentials etc)
-    // esp_err_t ret = nvs_flash_init();
-    // if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    // {
-    //     ESP_ERROR_CHECK(nvs_flash_erase());
-    //     ESP_ERROR_CHECK(nvs_flash_init());
-    // }
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
 
     // WiFi init
-    // esp_err_t ret1 = wifi_init_sta(greenhouse_config.wifi_ssid, greenhouse_config.wifi_password);
-    // if (ret1 == ESP_OK) {
-    //     ESP_LOGI(TAG, "WiFi connected successfully");
-    // } else {
-    //     ESP_LOGE(TAG, "WiFi connection FAILED (error: %s)", esp_err_to_name(ret));
-    //     set_red_connection_led(LED_ON);
-    // }
+    esp_err_t ret1 = wifi_init_sta(greenhouse_config.wifi_ssid, greenhouse_config.wifi_password);
+    if (ret1 == ESP_OK) {
+        ESP_LOGI(TAG, "WiFi connected successfully");
+    } else {
+        ESP_LOGE(TAG, "WiFi connection FAILED (error: %s)", esp_err_to_name(ret));
+        set_red_connection_led(LED_ON);
+    }
 
-    // // MQTT init
-    // ESP_LOGI(TAG, "Starting MQTT...");
-    // ESP_ERROR_CHECK(mqtt_start());
+    // MQTT init
+    ESP_LOGI(TAG, "Starting MQTT...");
+    ESP_ERROR_CHECK(mqtt_start());
     ESP_LOGI(TAG, "Initializing of all components completed");
 
     measurements_t current_measurements = {
@@ -102,24 +101,26 @@ void app_main(void)
         .relative_humidity = 0,
         .light = 0,
         .pots = {
-            {.name = "plant0", .soil_moisture = 0, .active=true},
-            {.name = "plant1", .soil_moisture = 0, .active=true},
-            {.name = "plant2", .soil_moisture = 0, .active=true},
-            {.name = "plant3", .soil_moisture = 0, .active=true},
+            {.id = 0, .name = "plant0", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
+            {.id = 1, .name = "plant1", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
+            {.id = 2, .name = "plant2", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
+            {.id = 3, .name = "plant3", .gpio_pump = 0, .gpio_fan = 0, .soil_moisture = 0},
         }
     };
 
     // server init
-    // ESP_LOGI(TAG, "Starting http server");
-    // http_server_start(&greenhouse_config, &current_measurements);
+    ESP_LOGI(TAG, "Starting http server");
+    http_server_start(&greenhouse_config, &current_measurements);
 
     //init uart task
-    // xTaskCreate(uart_config_task, "uart_config", 4096, NULL, 5, NULL);
+    xTaskCreate(uart_config_task, "uart_config", 4096, NULL, 5, NULL);
     
     //stop mqtt libraries to clutter log output
     esp_log_level_set("esp-tls", ESP_LOG_NONE);
     esp_log_level_set("mqtt_client", ESP_LOG_NONE);
     esp_log_level_set("transport_base", ESP_LOG_NONE);
+
+
 
     while (1)
     {
@@ -132,48 +133,49 @@ void app_main(void)
             take_measurement(&current_measurements);
 
             // connect to new wifi credentials if given
-            // if (greenhouse_config.wifi_reconfigure) {
-            //     wifi_reconfigure(greenhouse_config.wifi_ssid, greenhouse_config.wifi_password);
-            //     greenhouse_config.wifi_reconfigure = false;
-            // }
+            if (greenhouse_config.wifi_reconfigure) {
+                wifi_reconfigure(greenhouse_config.wifi_ssid, greenhouse_config.wifi_password);
+                greenhouse_config.wifi_reconfigure = false;
+            }
             // Connect to wifi if connection was lost
-            // if(!wifi_is_connected()) {
-            //     set_red_connection_led(LED_ON);
-            //     ESP_LOGI(TAG, "Trying reconect to wifi");
-            //     wifi_reconnect();
-            // }
+            if(!wifi_is_connected()) {
+                set_red_connection_led(LED_ON);
+                ESP_LOGI(TAG, "Trying reconect to wifi");
+                wifi_reconnect();
+            }
             // Publish measurements
-            // if (mqtt_is_connected()) {
-            //     set_red_connection_led(LED_OFF);
-            //     char buf[16];
+            if (mqtt_is_connected()) {
+                set_red_connection_led(LED_OFF);
+                char buf[16];
 
-            //     // Temperature
-            //     snprintf(buf, sizeof(buf), "%.2f", current_measurements.temperature);
-            //     mqtt_publish("greenhouse/temperature", buf, 1, 0);
+                // Temperature
+                snprintf(buf, sizeof(buf), "%.2f", current_measurements.temperature);
+                mqtt_publish("greenhouse/temperature", buf, 1, 0);
 
-            //     // Relative humidity
-            //     snprintf(buf, sizeof(buf), "%.2f", current_measurements.relative_humidity);
-            //     mqtt_publish("greenhouse/humidity", buf, 1, 0);
+                // Relative humidity
+                snprintf(buf, sizeof(buf), "%.2f", current_measurements.relative_humidity);
+                mqtt_publish("greenhouse/humidity", buf, 1, 0);
 
-            //     // Light intensity
-            //     snprintf(buf, sizeof(buf), "%.2f", current_measurements.light);
-            //     mqtt_publish("greenhouse/light", buf, 1, 0);
-            //     ESP_LOGI(TAG, "Publishing data to cloud");
+                // Light intensity
+                snprintf(buf, sizeof(buf), "%.2f", current_measurements.light);
+                mqtt_publish("greenhouse/light", buf, 1, 0);
+                ESP_LOGI(TAG, "Publishing data to cloud");
 
-            //     // Soil moisture
-            //     //for (int i = 0; i < 4; i++)
-            //     //    snprintf(buf, sizeof(buf), "%.2f", current_measurements.soil_moisture);
-            //     //    mqtt_publish("greenhouse/soil", buf, 1, 0);
+                // Soil moisture
+                //for (int i = 0; i < 4; i++)
+                //    snprintf(buf, sizeof(buf), "%.2f", current_measurements.soil_moisture);
+                //    mqtt_publish("greenhouse/soil", buf, 1, 0);
 
-            // } else {
-            //     ESP_LOGW(TAG, "MQTT not connected, skipping publish");
-            // }
+            } else {
+                ESP_LOGW(TAG, "MQTT not connected, skipping publish");
+            }
             
             // actuators
-            // grow_light_control(current_measurements.light, greenhouse_config);
+            grow_light_control(current_measurements.light, greenhouse_config);
 
             // pump control
-            control_active_pumps(&current_measurements, greenhouse_config);
+            for (int i = 0; i < 4; i++)
+                pump_control(current_measurements.pots[i].soil_moisture, greenhouse_config);
 
             last_measurement_time = now;
         }
@@ -181,11 +183,11 @@ void app_main(void)
         // outputs
         if (now - last_display_time >= DISPLAY_INTERVAL_MS)
         {
-            // if (get_blue_button_pressed())
-            // {
-            //     ESP_LOGI(TAG, "Taking extra measurement");
-            //     take_measurement(&current_measurements);
-            // }
+            if (get_blue_button_pressed())
+            {
+                ESP_LOGI(TAG, "Taking extra measurement");
+                take_measurement(&current_measurements);
+            }
 
             // leds
             // if (current_measurements.soil_moisture <= greenhouse_config.pump_soilmoist_threshold_pct) {
@@ -195,7 +197,9 @@ void app_main(void)
             // }
 
             //draw display
-            // display_draw(&current_measurements, get_white_button_pressed());   
+            if (USE_DISPLAY) {
+                display_draw(&current_measurements, get_white_button_pressed());
+            }   
             last_display_time = now;
         }
 

@@ -10,7 +10,7 @@ typedef enum {
 } led_state;
 
 // Public functions
-void outputs_init(void);
+void status_leds_init(void);
 void set_red_connection_led(led_state state);
 void set_green_moisture_led(led_state state);
 

@@ -8,22 +8,14 @@
 #define MAX_JSON_SIZE 512
 #define TAG "CONFIG_HANDLER"
 
-#define DEFAULT_MEASUREMENT_INTERVAL_S 10
-#define DEFAULT_FAN_TEMP_HIGHER_THRESHOLD 20.6f
-#define DEFAULT_FAN_TEMP_LOWER_THRESHOLD 20.5f
-#define DEFAULT_FAN_HUM_HIGHER_THRESHOLD 70.0f
-#define DEFAULT_FAN_HUM_LOWER_THRESHOLD 65.0f
-#define DEFAULT_PUMP_SOILMOIST_THRESHOLD 25.0f
+#define DEFAULT_MEASUREMENT_INTERVAL_S 5
+#define DEFAULT_PUMP_SOILMOIST_THRESHOLD 40.0f
 #define DEFAULT_GROWLIGHT_LIGHT_THRESHOLD 70.0f
 
 greenhouse_config_t greenhouse_config;
 
 void reset_to_default_config(void) {
     greenhouse_config.measurement_interval_s = DEFAULT_MEASUREMENT_INTERVAL_S;
-    greenhouse_config.fan_temp_lower_threshold_C = DEFAULT_FAN_TEMP_LOWER_THRESHOLD;
-    greenhouse_config.fan_temp_higher_threshold_C = DEFAULT_FAN_TEMP_HIGHER_THRESHOLD;
-    greenhouse_config.fan_hum_lower_threshold_pct = DEFAULT_FAN_HUM_LOWER_THRESHOLD;
-    greenhouse_config.fan_hum_higher_threshold_pct = DEFAULT_FAN_HUM_HIGHER_THRESHOLD;
     greenhouse_config.pump_soilmoist_threshold_pct = DEFAULT_PUMP_SOILMOIST_THRESHOLD;
     greenhouse_config.growlight_light_threshold_pct = DEFAULT_GROWLIGHT_LIGHT_THRESHOLD;
     greenhouse_config.growlight_override = false;
@@ -80,37 +72,7 @@ void parse_json_to_config(const char *data, int len) {
             ESP_LOGW(TAG, "Invalid interval: %d (1-86400)", val);
         }
     }
-    
-    // Fan thresholds (0-50°C)
-    if ((field = cJSON_GetObjectItem(root, "fan_temp_lower_threshold_C"))) {
-        float val = field->valuedouble;
-        if (val >= 0.0f && val <= 50.0f) {
-            greenhouse_config.fan_temp_lower_threshold_C = val;
-            config_changed = true;
-        }
-    }
-    if ((field = cJSON_GetObjectItem(root, "fan_temp_higher_threshold_C"))) {
-        float val = field->valuedouble;
-        if (val >= 0.0f && val <= 50.0f) {
-            greenhouse_config.fan_temp_higher_threshold_C = val;
-            config_changed = true;
-        }
-    }
-    if ((field = cJSON_GetObjectItem(root, "fan_hum_lower_threshold_pct"))) {
-        float val = field->valuedouble;
-        if (val >= 0.0f && val <= 100.0f) {
-            greenhouse_config.fan_hum_lower_threshold_pct = val;
-            config_changed = true;
-        }
-    }
-    if ((field = cJSON_GetObjectItem(root, "fan_hum_higher_threshold_pct"))) {
-        float val = field->valuedouble;
-        if (val >= 0.0f && val <= 100.0f) {
-            greenhouse_config.fan_hum_higher_threshold_pct = val;
-            config_changed = true;
-        }
-    }
-    
+     
     // Pump threshold (0-100%)
     if ((field = cJSON_GetObjectItem(root, "pump_soilmoist_threshold_pct"))) {
         float val = field->valuedouble;
@@ -193,13 +155,6 @@ void parse_json_to_config(const char *data, int len) {
         greenhouse_config.config_updated = true;
         ESP_LOGI(TAG, "=== NEW GREENHOUSE CONFIG ===");
         ESP_LOGI(TAG, "Interval: %lu s", greenhouse_config.measurement_interval_s);
-        ESP_LOGI(TAG, "Fan temp thres: %.1f°C <-> %.1f°C %.1f%% <-> %.1f%% (override: %s, state: %s)", 
-                greenhouse_config.fan_temp_lower_threshold_C,
-                greenhouse_config.fan_temp_higher_threshold_C,
-                greenhouse_config.fan_hum_lower_threshold_pct,
-                greenhouse_config.fan_hum_higher_threshold_pct,
-                greenhouse_config.fan_override ? "ON" : "OFF",
-                greenhouse_config.fan_override_state ? "ON" : "OFF");
         ESP_LOGI(TAG, "Pump soilm. thres: %.1f%% (override: %s, state: %s)", 
                 greenhouse_config.pump_soilmoist_threshold_pct,
                 greenhouse_config.pump_override ? "ON" : "OFF",

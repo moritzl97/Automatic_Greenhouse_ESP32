@@ -2,7 +2,7 @@
 #include "gpio_config.h"
 #include "esp_timer.h"
 
-void outputs_init(void)
+void status_leds_init(void)
 {
     gpio_config_t io_conf_led_red = {
         .pin_bit_mask = (1ULL << RED_WIFI_LED),

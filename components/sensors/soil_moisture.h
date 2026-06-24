@@ -1,13 +1,9 @@
 #ifndef SOIL_MOISTURE_H
 #define SOIL_MOISTURE_H
 
-typedef struct {
-    int raw;
-    int voltage_mv;
-    int moisture_percent;
-} soil_data_t;
+#include "utils.h"
 
 void soil_sensor_init(void);
-int soil_sensor_read(void);
+void measure_active_soil_moisture(measurements_t *measurement);
 
 #endif

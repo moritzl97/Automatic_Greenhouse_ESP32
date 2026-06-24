@@ -45,7 +45,7 @@ float ldr_read_percent(void)
     int raw = 0;
     if (adc_oneshot_read(get_adc1_handle(), LIGHT_SENSOR_ADC_CHANNEL, &raw) == ESP_OK)
     {
-        return raw / 4095.0f * 100.0f;
+        return (1.0f - raw / 4095.0f) * 100.0f;
     }
     return -1; // return -1 if reading failed
 }

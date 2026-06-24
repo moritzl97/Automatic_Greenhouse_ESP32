@@ -6,8 +6,16 @@
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_init.h"
 #include "gpio_config.h"
+#include "utils.h"
 
 #define TAG "SOIL_MOISTURE_SENSOR"
+
+static const adc_channel_t soil_channels[] = {
+    SOIL_SENSOR_1_ADC_CHANNEL,
+    SOIL_SENSOR_2_ADC_CHANNEL,
+    SOIL_SENSOR_3_ADC_CHANNEL,
+    SOIL_SENSOR_4_ADC_CHANNEL,
+};
 
 static adc_cali_handle_t cali_handle;
 
@@ -29,18 +37,19 @@ void soil_sensor_init(void)
     ESP_LOGI(TAG, "Soil moisture sensor initialized");
 }
 
-int soil_sensor_read(void)
+void measure_active_soil_moisture(measurements_t *measurement)
 {
-    int raw = 0;
-    int voltage_mv = 0;
+    for (int i = 0; i < 4; i++) {
+        if (!measurement->pots[i].active) continue;
 
-    adc_oneshot_read(get_adc1_handle(), SOIL_SENSOR_1_ADC_CHANNEL, &raw);
-
-    adc_cali_raw_to_voltage(cali_handle, raw, &voltage_mv);
-
-    int percent = map_value(raw, 4095, 1200, 0, 100);
-    if (percent < 0) percent = 0;
-    if (percent > 100) percent = 100;
-
-    return percent;
+        int raw = 0;
+        if (adc_oneshot_read(get_adc1_handle(), soil_channels[i], &raw) == ESP_OK) {
+            int percent = map_value(raw, 4095, 1200, 0, 100);
+            if (percent < 0) percent = 0;
+            if (percent > 100) percent = 100;
+            measurement->pots[i].soil_moisture = percent;
+        } else {
+            ESP_LOGW(TAG, "Failed to read soil sensor %d", i);
+        }
+    }
 }

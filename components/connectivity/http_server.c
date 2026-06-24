@@ -31,10 +31,6 @@ esp_err_t config_get_handler(httpd_req_t *req) {
     // responds with json formated config
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "measurement_interval_s", greenhouse_config.measurement_interval_s);
-    cJSON_AddNumberToObject(root, "fan_temp_lower_threshold_C", greenhouse_config.fan_temp_lower_threshold_C);
-    cJSON_AddNumberToObject(root, "fan_temp_higher_threshold_C", greenhouse_config.fan_temp_higher_threshold_C);
-    cJSON_AddNumberToObject(root, "fan_hum_lower_threshold_pct", greenhouse_config.fan_hum_lower_threshold_pct);
-    cJSON_AddNumberToObject(root, "fan_hum_higher_threshold_pct", greenhouse_config.fan_hum_higher_threshold_pct);
     cJSON_AddNumberToObject(root, "pump_soilmoist_threshold_pct", greenhouse_config.pump_soilmoist_threshold_pct);
     cJSON_AddNumberToObject(root, "growlight_light_threshold_pct", greenhouse_config.growlight_light_threshold_pct);
     cJSON_AddBoolToObject(root, "growlight_override", greenhouse_config.growlight_override);

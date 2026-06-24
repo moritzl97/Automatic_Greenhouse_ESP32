@@ -5,10 +5,7 @@
 #include <stdint.h>
 
 typedef struct {
-    int id;
     char name[20];
-    int gpio_pump;
-    int gpio_fan;
     bool active;
     float soil_moisture;
 } pot;
@@ -22,10 +19,6 @@ typedef struct {
 
 typedef struct {
     uint32_t measurement_interval_s;
-    float fan_temp_higher_threshold_C;
-    float fan_temp_lower_threshold_C;
-    float fan_hum_higher_threshold_pct;
-    float fan_hum_lower_threshold_pct;
     float pump_soilmoist_threshold_pct;
     float growlight_light_threshold_pct;
     bool growlight_override;      

@@ -5,9 +5,8 @@
 #include "driver/gpio.h"
 
 // Public functions
-void inputs_init(void);
+void buttons_init(void);
 bool get_blue_button_pressed();
 bool get_white_button_pressed();
-void uart_config_task(void *arg);
 
 #endif
