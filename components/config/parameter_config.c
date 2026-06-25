@@ -22,8 +22,6 @@ void reset_to_default_config(void) {
     greenhouse_config.growlight_override_state = false;
     greenhouse_config.pump_override = false;
     greenhouse_config.pump_override_state = false;
-    greenhouse_config.fan_override = false;
-    greenhouse_config.fan_override_state = false;
     greenhouse_config.wifi_reconfigure = false;
     greenhouse_config.config_updated = false;
     strcpy(greenhouse_config.wifi_ssid, DEFAULT_WIFI_SSID);
@@ -92,16 +90,6 @@ void parse_json_to_config(const char *data, int len) {
     }
     
     // Overrides (boolean)
-    if ((field = cJSON_GetObjectItem(root, "fan_override"))) {
-        greenhouse_config.fan_override = cJSON_IsTrue(field);
-        config_changed = true;
-    }
-    if ((field = cJSON_GetObjectItem(root, "fan"))) {
-        greenhouse_config.fan_override_state = cJSON_IsTrue(field);
-        greenhouse_config.fan_override = true;
-        config_changed = true;
-    }
-    
     if ((field = cJSON_GetObjectItem(root, "pump_override"))) {
         greenhouse_config.pump_override = cJSON_IsTrue(field);
         config_changed = true;

@@ -29,8 +29,18 @@
             transition: transform 0.3s ease;
         }
         .reading-card:hover { transform: translateY(-5px); }
+        .reading-card.inactive { opacity: 0.4; }
         .reading-value { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
         .reading-label { font-size: 1.1em; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+        .reading-sublabel { font-size: 0.85em; opacity: 0.7; margin-top: 4px; }
+        .section-title { 
+            max-width: 800px; width: 100%; 
+            font-size: 1.1em; 
+            opacity: 0.8; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            margin: 20px 0 10px 0; 
+        }
     </style>
 </head>
 <body>
@@ -38,7 +48,7 @@
         <h1>🌱 Greenhouse Monitor</h1>
         <div>Live sensor data</div>
     </div>
-    
+
     <div class="readings">
         <div class="reading-card">
             <div class="reading-value" id="temp">--°C</div>
@@ -49,67 +59,53 @@
             <div class="reading-label">Humidity</div>
         </div>
         <div class="reading-card">
-            <div class="reading-value" id="soil">--%</div>
-            <div class="reading-label">Soil Moisture</div>
-        </div>
-        <div class="reading-card">
             <div class="reading-value" id="light">--%</div>
             <div class="reading-label">Light Intensity</div>
         </div>
     </div>
 
+    <div class="section-title">Soil Moisture</div>
+
+    <div class="readings" id="pots-grid">
+        <!-- filled by JS -->
+    </div>
+
     <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
-        <button id="fan-btn" onclick="cycleFan()" style="padding: 15px 25px; font-size: 1.1em; background: #2196F3; color: white; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            Fan <span id="fan-state">AUTO</span>
-        </button>
         <button id="light-btn" onclick="cycleLight()" style="padding: 15px 25px; font-size: 1.1em; background: #2196F3; color: white; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
             Growlight <span id="light-state">AUTO</span>
         </button>
     </div>
 
     <script>
-        // Update data on homepage
         async function updateReadings() {
             try {
                 const response = await fetch('/data');
                 const data = await response.json();
-                document.getElementById('temp').textContent = data.temperature_C.toFixed(1) + '°C';
-                document.getElementById('hum').textContent = data.relative_humidity_pct.toFixed(1) + '%';
-                document.getElementById('soil').textContent = data.soil_moisture_pct.toFixed(1) + '%';
+
+                document.getElementById('temp').textContent  = data.temperature_C.toFixed(1) + '°C';
+                document.getElementById('hum').textContent   = data.relative_humidity_pct.toFixed(1) + '%';
                 document.getElementById('light').textContent = data.light_intensity_pct.toFixed(1) + '%';
+
+                const grid = document.getElementById('pots-grid');
+                grid.innerHTML = '';
+                data.pots.forEach(pot => {
+                    const card = document.createElement('div');
+                    card.className = 'reading-card' + (pot.active ? '' : ' inactive');
+                    card.innerHTML = `
+                        <div class="reading-value">${pot.active ? pot.soil_moisture_pct.toFixed(1) + '%' : '—'}</div>
+                        <div class="reading-label">${pot.name}</div>
+                        <div class="reading-sublabel">${pot.active ? 'Soil Moisture' : 'Inactive'}</div>
+                    `;
+                    grid.appendChild(card);
+                });
+
             } catch(e) { console.error('Update failed:', e); }
         }
 
-        // Button functions
-        let fanState = 0, lightState = 0;  // 0=auto, 1=on, 2=off
-
+        let lightState = 0;
         const stateNames = ['AUTO', 'ON', 'OFF'];
-        const Colors = ['#2196F3', '#4CAF50', '#F44336'];  // blue, green, red
+        const Colors = ['#2196F3', '#4CAF50', '#F44336'];
 
-        async function cycleFan() {
-            fanState = (fanState + 1) % 3;
-            document.getElementById('fan-state').textContent = stateNames[fanState];
-            document.getElementById('fan-btn').style.background = Colors[fanState];
-            
-            if (fanState === 0) {
-                await fetch('/config', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        fan_override: false
-                    })
-                });
-            } else {
-                await fetch('/config', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        fan_override: true,
-                        fan: fanState === 1
-                    })
-                });
-            }
-        }
         async function cycleLight() {
             lightState = (lightState + 1) % 3;
             document.getElementById('light-state').textContent = stateNames[lightState];
@@ -118,21 +114,27 @@
                 await fetch('/config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        growlight_override: false
-                    })
+                    body: JSON.stringify({ growlight_override: false })
                 });
             } else {
-            await fetch('/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    growlight_override: true,
-                    growlight: lightState === 1
-                })
+                await fetch('/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ growlight_override: true, growlight: lightState === 1 })
                 });
             }
         }
+
+        async function loadHistory() {
+            const url = `${FIREBASE_DB_URL}/measurements.json?orderBy="$key"&limitToLast=20`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const entries = Object.values(data);
+            // entries is an array of your measurement objects, newest last
+            console.log(entries);
+            // plot or display as needed
+        }
+
         setInterval(updateReadings, 3000);
         updateReadings();
     </script>

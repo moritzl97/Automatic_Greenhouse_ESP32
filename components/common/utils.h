@@ -25,8 +25,6 @@ typedef struct {
     bool growlight_override_state; 
     bool pump_override;
     bool pump_override_state;
-    bool fan_override;
-    bool fan_override_state;
     char wifi_ssid[33];
     char wifi_password[65];
     bool wifi_reconfigure;

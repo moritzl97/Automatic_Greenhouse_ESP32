@@ -14,8 +14,15 @@ esp_err_t data_get_handler(httpd_req_t *req) {
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "temperature_C", ctx->measurements->temperature);
     cJSON_AddNumberToObject(root, "relative_humidity_pct", ctx->measurements->relative_humidity);
-    //cJSON_AddNumberToObject(root, "soil_moisture_pct", ctx->measurements->soil_moisture);
     cJSON_AddNumberToObject(root, "light_intensity_pct", ctx->measurements->light);
+    cJSON *pots = cJSON_AddArrayToObject(root, "pots");
+    for (int i = 0; i < 4; i++) {
+        cJSON *pot = cJSON_CreateObject();
+        cJSON_AddStringToObject(pot, "name", ctx->measurements->pots[i].name);
+        cJSON_AddBoolToObject(pot, "active", ctx->measurements->pots[i].active);
+        cJSON_AddNumberToObject(pot, "soil_moisture_pct", ctx->measurements->pots[i].soil_moisture);
+        cJSON_AddItemToArray(pots, pot);
+    }
     
     char *json_str = cJSON_Print(root);
     httpd_resp_set_type(req, "application/json");
@@ -37,8 +44,6 @@ esp_err_t config_get_handler(httpd_req_t *req) {
     cJSON_AddBoolToObject(root, "growlight_override_state", greenhouse_config.growlight_override_state);
     cJSON_AddBoolToObject(root, "pump_override", greenhouse_config.pump_override);
     cJSON_AddBoolToObject(root, "pump_override_state", greenhouse_config.pump_override_state);
-    cJSON_AddBoolToObject(root, "fan_override", greenhouse_config.fan_override);
-    cJSON_AddBoolToObject(root, "fan_override_state", greenhouse_config.fan_override_state);
 
     char *json_str = cJSON_Print(root);
     httpd_resp_set_type(req, "application/json");
